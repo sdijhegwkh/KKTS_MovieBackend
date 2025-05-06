@@ -388,5 +388,37 @@ router.delete('/:movie_id', async (req, res) => {
     res.status(500).json({ error: 'Failed to delete movie' });
   }
 });
+router.put('/:id/price', async (req, res) => {
+  try {
+    const movieId = req.params.id;
+    const { ticket_price } = req.body;
+
+    // Validate input
+    if (!ticket_price || ticket_price <= 0) {
+      return res.status(400).json({ error: 'Ticket price must be a positive number' });
+    }
+
+    // Find and update the movie
+    const movie = await Movie.findOneAndUpdate(
+      { movie_id: movieId }, // Match by movie_id
+      { ticket_price: Number(ticket_price), last_updated: new Date() },
+      { new: true } // Return the updated document
+    );
+
+    if (!movie) {
+      return res.status(404).json({ error: 'Movie not found' });
+    }
+
+    res.status(200).json({
+      movie_id: movie.movie_id,
+      title: movie.title,
+      ticket_price: movie.ticket_price,
+      last_updated: movie.last_updated,
+    });
+  } catch (error) {
+    console.error('Error updating movie price:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
 module.exports = router;
