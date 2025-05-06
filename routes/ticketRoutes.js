@@ -82,16 +82,14 @@ const authenticate = (req, res, next) => {
     });
     router.get('/stats', async (req, res) => {
       try {
-        const totalTickets = await Ticket.countDocuments();
-        console.log(`Total tickets counted: ${totalTickets}`); // Log để debug
+        const totalTickets = await Ticket.countDocuments({ status: { $ne: 'canceled' } });
+        console.log(`Total non-canceled tickets counted: ${totalTickets}`);
         res.json({ totalTickets });
       } catch (error) {
         console.error('Error fetching ticket stats:', error.message, error.stack);
         res.status(500).json({ error: 'Failed to fetch ticket stats' });
       }
     });
-    
-    module.exports = router;
   
   module.exports = router;
   
