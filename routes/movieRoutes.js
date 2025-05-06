@@ -388,6 +388,29 @@ router.delete('/:movie_id', async (req, res) => {
     res.status(500).json({ error: 'Failed to delete movie' });
   }
 });
+router.get('/:movie_id/price', async (req, res) => {
+  try {
+    const { movie_id } = req.params;
+
+    const movie = await Movie.findOne({ movie_id: Number(movie_id) }).select(
+      'movie_id title genres ticket_price'
+    );
+
+    if (!movie) {
+      return res.status(404).json({ error: 'Movie not found' });
+    }
+
+    res.json({
+      id: movie.movie_id,
+      movieName: movie.title || 'Unknown Title',
+      type: movie.genres && movie.genres.length > 0 ? movie.genres.join(', ') : 'Unknown Genre',
+      ticket_price: movie.ticket_price || 60000,
+    });
+  } catch (error) {
+    console.error('Error fetching movie price:', error.message, error.stack);
+    res.status(500).json({ error: 'Failed to fetch movie price' });
+  }
+});
 router.put('/:id/price', async (req, res) => {
   try {
     const movieId = req.params.id;
@@ -420,5 +443,6 @@ router.put('/:id/price', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
 
 module.exports = router;
