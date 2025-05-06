@@ -183,21 +183,25 @@ router.get('/getBookingSeats', authenticate, async (req, res) => {
 router.get('/revenue', async (req, res) => {
   console.log('Revenue endpoint called');
   try {
-    const currentDate = new Date('2025-05-02T00:00:00Z');
-    const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-    const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59, 999);
+    const currentDate = new Date();
+    currentDate.setUTCHours(0, 0, 0, 0); // Normalize to UTC
+
+    const startOfMonth = new Date(Date.UTC(currentDate.getFullYear(), currentDate.getMonth(), 1));
+    const endOfMonth = new Date(Date.UTC(currentDate.getFullYear(), currentDate.getMonth() + 1, 0, 23, 59, 59, 999));
 
     const startOfWeek = new Date(currentDate);
     startOfWeek.setDate(currentDate.getDate() - currentDate.getDay() + (currentDate.getDay() === 0 ? -6 : 1));
-    startOfWeek.setHours(0, 0, 0, 0);
+    startOfWeek.setUTCHours(0, 0, 0, 0);
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 6);
-    endOfWeek.setHours(23, 59, 59, 999);
+    endOfWeek.setUTCHours(23, 59, 59, 999);
 
     const startOfDay = new Date(currentDate);
-    startOfDay.setHours(0, 0, 0, 0);
+    startOfDay.setUTCHours(0, 0, 0, 0);
     const endOfDay = new Date(currentDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    endOfDay.setUTCHours(23, 59, 59, 999);
+
+    console.log('Date Ranges:', { startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfDay, endOfDay });
 
     const totalRevenueResult = await Booking.aggregate([
       { $match: { order_status: 'ordered' } },
@@ -237,7 +241,7 @@ router.get('/revenue', async (req, res) => {
     const sixMonthsAgo = new Date(currentDate);
     sixMonthsAgo.setMonth(currentDate.getMonth() - 5);
     sixMonthsAgo.setDate(1);
-    sixMonthsAgo.setHours(0, 0, 0, 0);
+    sixMonthsAgo.setUTCHours(0, 0, 0, 0);
 
     const monthlyRevenueDataResult = await Booking.aggregate([
       {
@@ -257,6 +261,14 @@ router.get('/revenue', async (req, res) => {
       },
       { $sort: { '_id.year': 1, '_id.month': 1 } },
     ]);
+
+    console.log('Aggregation Results:', {
+      totalRevenueResult,
+      monthlyRevenueResult,
+      weeklyRevenueResult,
+      dailyRevenueResult,
+      monthlyRevenueDataResult,
+    });
 
     const monthNames = [
       'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
@@ -287,6 +299,7 @@ router.get('/revenue', async (req, res) => {
     };
 
     console.log('Revenue data:', response);
+    res.set('Cache-Control', 'no-store');
     res.json(response);
   } catch (error) {
     console.error('Error fetching revenue data:', error.message, error.stack);
